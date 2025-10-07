@@ -1,1 +1,49 @@
+name: CI - Build, Test and Coverage
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin123
+          POSTGRES_DB: tavinho
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5 
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup do Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Permitir execução do Gradle
+        run: chmod +x ./gradlew
+
+      - name: Rodar testes e gerar cobertura
+        run: ./gradlew clean test jacocoTestReport
+
+      - name: Upload do relatório de cobertura (HTML)
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-cobertura-jacoco
+          path: build/reports/jacoco/test/html
 
